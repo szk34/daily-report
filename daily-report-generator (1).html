@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>作業報告</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f2f1ed; --surface: #fff; --surface2: #f8f7f4;
+  --border: #e0ddd6; --border-strong: #c4c0b8;
+  --text: #1a1916; --text-sub: #6b6760; --text-muted: #a09d98;
+  --accent: #2d5a8e; --accent-light: #e8f0f9;
+  --warn: #b85c38; --warn-light: #fdf0eb;
+  --success: #3a7d5f;
+  --radius: 10px; --radius-sm: 6px;
+  --header-h: 52px; --nav-h: 60px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overscroll-behavior: none; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 15px; line-height: 1.6;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── HEADER ── */
+header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: calc(var(--header-h) + env(safe-area-inset-top));
+  background: #1a1916;
+  display: flex; align-items: flex-end; padding: 0 14px 10px;
+  gap: 10px; z-index: 200;
+}
+.header-logo { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .03em; }
+.header-logo span { color: #7ab3e8; font-weight: 400; }
+.header-sep { flex: 1; }
+.sync-status {
+  font-size: 11px; color: #aaa;
+  display: flex; align-items: center; gap: 4px;
+  transition: color .3s;
+}
+.sync-status.syncing { color: #7ab3e8; }
+.sync-status.ok      { color: #5fbf8e; }
+.sync-status.err     { color: #e07060; }
+.sync-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+}
+.btn-header-reset {
+  font-size: 12px; background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15); color: #ccc;
+  padding: 5px 10px; border-radius: 5px; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; white-space: nowrap;
+}
+.header-date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #777; white-space: nowrap; }
+
+/* ── GAS設定バナー ── */
+#gasBanner {
+  position: fixed;
+  top: calc(var(--header-h) + env(safe-area-inset-top));
+  left: 0; right: 0; z-index: 190;
+  background: #fff8e1; border-bottom: 2px solid #f0c040;
+  padding: 10px 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: #5a4000;
+  font-family: 'Noto Sans JP', sans-serif;
+  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+}
+#gasBanner .gas-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+#gasBanner .gas-body { flex: 1; line-height: 1.7; }
+#gasBanner strong { font-weight: 700; color: #3a2000; }
+#gasUrlInput {
+  width: 100%; margin-top: 8px;
+  border: 1.5px solid #e0c060; border-radius: 6px;
+  padding: 9px 11px; font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text); background: #fff; outline: none;
+}
+#gasUrlInput:focus { border-color: var(--accent); }
+.gas-btn-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.gas-btn-save {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 6px;
+  padding: 8px 16px; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif; min-height: 38px;
+}
+.gas-btn-skip {
+  background: none; border: 1px solid var(--border-strong); color: var(--text-sub);
+  border-radius: 6px; padding: 8px 14px; font-size: 13px;
+  cursor: pointer; font-family: 'Noto Sans JP', sans-serif; min-height: 38px;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: var(--nav-h); background: #fff;
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--text-muted); font-size: 10px; font-weight: 500;
+  padding: 8px 0;
+}
+.nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+.nav-btn.active { color: var(--accent); }
+
+/* ── PAGE WRAP ── */
+.page-wrap {
+  padding-top: calc(var(--header-h) + env(safe-area-inset-top));
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  min-height: 100vh;
+}
+.page { display: none; padding: 14px; max-width: 680px; margin: 0 auto; }
+.page.active { display: block; }
+
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .page-wrap { padding-bottom: 24px; padding-top: calc(var(--header-h) + 14px); }
+  .desktop-layout {
+    display: grid; grid-template-columns: 1fr 400px;
+    gap: 18px; max-width: 1100px; margin: 0 auto; padding: 16px 20px 40px;
+  }
+  .page { display: block !important; padding: 0; max-width: none; }
+}
+
+/* ── CARD ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+.card-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.card-head h2 { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-sub); flex: 1; }
+.count-badge { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; }
+.card-body { padding: 14px; }
+
+/* ── FIELDS ── */
+.field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.field-group:last-child { margin-bottom: 0; }
+.field-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.field-input {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 11px 13px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 15px; color: var(--text); background: var(--surface);
+  outline: none; width: 100%; -webkit-appearance: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+textarea.field-input { resize: vertical; min-height: 72px; line-height: 1.7; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── TASKS ── */
+.task-item {
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 10px; overflow: hidden; background: var(--surface); transition: border-color .15s;
+}
+.task-item.has-remaining { border-color: #e8b89a; background: #fffaf7; }
+.task-item.has-remaining .task-bar { background: #fef4ee; }
+.task-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px; background: var(--surface2);
+  cursor: pointer; user-select: none; min-height: 52px;
+}
+.task-num {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  color: var(--accent); background: var(--accent-light);
+  padding: 3px 8px; border-radius: 4px; min-width: 34px; text-align: center; flex-shrink: 0;
+}
+.task-title-preview {
+  flex: 1; font-size: 14px; font-weight: 500; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.task-bar-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.btn-icon {
+  background: none; border: none; cursor: pointer;
+  width: 36px; height: 36px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 16px;
+}
+.btn-icon:active { background: var(--border); }
+.btn-icon.del:active { background: #fde8e2; color: var(--warn); }
+.chevron { font-size: 11px; color: var(--text-muted); transition: transform .2s; flex-shrink: 0; margin-left: -4px; }
+.task-item.open .chevron { transform: rotate(180deg); }
+.task-fields { display: none; padding: 14px 12px; border-top: 1px solid var(--border); flex-direction: column; gap: 12px; }
+.task-item.open .task-fields { display: flex; }
+.remaining-field .field-input { border-color: #e8b89a; background: var(--warn-light); }
+.remaining-field .field-input:focus { border-color: var(--warn); box-shadow: 0 0 0 3px #fde8e2; }
+
+/* ── SUBTASKS ── */
+.subtasks-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.subtask-row { display: flex; gap: 8px; align-items: flex-start; }
+.subtask-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); min-width: 32px; padding-top: 13px; flex-shrink: 0; }
+.subtask-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 11px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 15px; color: var(--text); background: var(--surface);
+  outline: none; resize: vertical; min-height: 52px; line-height: 1.6; -webkit-appearance: none;
+}
+.subtask-input:focus { border-color: var(--accent); }
+
+/* ── BUTTONS ── */
+.btn-add-task {
+  width: 100%; border: 2px dashed var(--border-strong); background: none;
+  border-radius: var(--radius-sm); padding: 14px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 14px; color: var(--text-sub);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 4px; min-height: 52px;
+}
+.btn-add-task:active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.btn-sm {
+  font-family: 'Noto Sans JP', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 8px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-sub);
+  cursor: pointer; display: inline-flex; align-items: center; gap: 4px; min-height: 40px;
+}
+.btn-sm:active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.btn-generate {
+  width: 100%; background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); padding: 16px 20px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 16px; min-height: 56px;
+}
+.btn-generate:active { background: #1e4070; }
+
+/* ── OUTPUT ── */
+.output-area {
+  font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 2;
+  color: var(--text); background: var(--surface2);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px; min-height: 140px; white-space: pre-wrap; word-break: break-all;
+  -webkit-user-select: text; user-select: text;
+}
+.output-area.has-content { background: #f7f9fc; border-color: #b8cfe8; }
+.output-placeholder { color: var(--text-muted); font-style: italic; font-family: 'Noto Sans JP', sans-serif; font-size: 14px; }
+.output-actions { display: flex; gap: 10px; margin-top: 12px; }
+.btn-copy, .btn-clear {
+  flex: 1; padding: 14px 16px; border-radius: var(--radius-sm);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px;
+}
+.btn-copy { background: var(--success); color: #fff; }
+.btn-copy:active { background: #2d6349; }
+.btn-clear { background: var(--surface2); color: var(--text-sub); border: 1.5px solid var(--border); }
+.btn-clear:active { background: #fde8e2; color: var(--warn); }
+.remaining-indicator {
+  display: none; align-items: center; gap: 8px;
+  margin-top: 12px; padding: 10px 14px;
+  background: var(--warn-light); border: 1px solid #e8b89a;
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--warn); font-weight: 500;
+}
+.remaining-indicator.visible { display: flex; }
+
+/* ── CARRY OVER BANNER ── */
+#carryOverBanner {
+  position: fixed;
+  top: calc(var(--header-h) + env(safe-area-inset-top));
+  left: 0; right: 0; z-index: 185;
+  background: #fff3e0; border-bottom: 2px solid #e8a050;
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-family: 'Noto Sans JP', sans-serif; color: #7a4010;
+}
+#carryOverBanner strong { font-weight: 700; }
+#carryOverBanner .banner-close {
+  margin-left: auto; background: #e8a050; border: none; color: #fff;
+  padding: 6px 14px; border-radius: 5px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0; min-height: 36px;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);
+  left: 50%; transform: translateX(-50%) translateY(10px);
+  background: rgba(26,25,22,.9); color: #fff;
+  padding: 10px 20px; border-radius: 30px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  opacity: 0; transition: all .2s; z-index: 999;
+  pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (min-width: 768px) { .toast { bottom: 28px; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-logo">作業報告<span>メモ</span></div>
+  <div class="header-sep"></div>
+  <div class="sync-status" id="syncStatus">
+    <span class="sync-dot"></span>
+    <span id="syncLabel">ローカル</span>
+  </div>
+  <button class="btn-header-reset" onclick="resetAll()">リセット</button>
+  <div class="header-date" id="todayDate"></div>
+</header>
+
+<!-- GAS URL 設定バナー -->
+<div id="gasBanner">
+  <span class="gas-icon">🔗</span>
+  <div class="gas-body">
+    <strong>クラウド同期を有効にする</strong>（PC↔スマホ共有）<br>
+    Google Apps Script の URL を貼り付けてください。<br>
+    設定方法は同封の <code>gas-server.js</code> の手順を参照してください。
+    <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false">
+    <div class="gas-btn-row">
+      <button class="gas-btn-save" onclick="saveGasUrl()">✓ この URL で同期する</button>
+      <button class="gas-btn-skip" onclick="skipGas()">今はスキップ（ローカルのみ）</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE WRAP -->
+<div class="page-wrap" id="pageWrap">
+  <div class="desktop-layout">
+
+    <!-- 左：入力 -->
+    <div>
+      <!-- 設定 -->
+      <div id="pageSettings" class="page active">
+        <div class="card">
+          <div class="card-head"><h2>📋 基本設定</h2></div>
+          <div class="card-body">
+            <div class="row2">
+              <div class="field-group">
+                <label class="field-label">報告日</label>
+                <input type="date" id="reportDate" class="field-input">
+              </div>
+              <div class="field-group">
+                <label class="field-label">宛先</label>
+                <input type="text" id="recipient" class="field-input" placeholder="串山室長">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">冒頭文</label>
+              <textarea id="introText" class="field-input">本日の作業報告です。残作業があるので、ご確認ください。</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- タスク -->
+      <div id="pageTasks" class="page">
+        <div class="card">
+          <div class="card-head">
+            <h2>🗂 作業タスク</h2>
+            <div class="count-badge" id="taskCount">0</div>
+          </div>
+          <div class="card-body">
+            <div id="tasksContainer"></div>
+            <button class="btn-add-task" onclick="addTask()">＋ タスクを追加</button>
+            <button class="btn-generate" onclick="generateAndSwitch()">✦ 報告文を生成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：出力 -->
+    <div id="pageOutput" class="page">
+      <div class="card">
+        <div class="card-head"><h2>📨 生成された報告文</h2></div>
+        <div class="card-body">
+          <div class="output-area" id="outputArea">
+            <span class="output-placeholder">「タスク」タブで「報告文を生成」を押すとここに表示されます。</span>
+          </div>
+          <div class="remaining-indicator" id="remainingIndicator">⚠ 残作業あり — 上長への確認が必要です</div>
+          <div class="output-actions">
+            <button class="btn-copy" id="copyBtn" onclick="copyReport()" disabled>📋 コピー</button>
+            <button class="btn-clear" onclick="clearOutput()">🗑 クリア</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navSettings" onclick="switchPage('settings')">
+    <span class="nav-icon">⚙️</span>設定
+  </button>
+  <button class="nav-btn" id="navTasks" onclick="switchPage('tasks')">
+    <span class="nav-icon">📝</span>タスク
+  </button>
+  <button class="nav-btn" id="navOutput" onclick="switchPage('output')">
+    <span class="nav-icon">📨</span>報告文
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   設定
+═══════════════════════════════════════ */
+const STORAGE_KEY = 'daily_report_v2';
+const GAS_URL_KEY = 'daily_report_gas_url';
+
+let GAS_URL = '';   // 初期化時にlocalStorageから読む
+let tasks = [];
+let taskIdCounter = 0;
+let syncEnabled = false;
+
+/* ═══════════════════════════════════════
+   GAS URL 管理
+═══════════════════════════════════════ */
+function initGasUrl() {
+  GAS_URL = localStorage.getItem(GAS_URL_KEY) || '';
+  if (GAS_URL) {
+    hideBanner();
+    document.getElementById('gasUrlInput').value = GAS_URL;
+    syncEnabled = true;
+    setSyncStatus('ok', 'クラウド同期有効');
+  }
+  // バナーのpaddingを画面に合わせる
+  adjustPagePadding();
+}
+
+function saveGasUrl() {
+  const url = document.getElementById('gasUrlInput').value.trim();
+  if (!url || !url.startsWith('https://script.google.com')) {
+    showToast('⚠ Apps Script の URL を正しく入力してください');
+    return;
+  }
+  GAS_URL = url;
+  localStorage.setItem(GAS_URL_KEY, GAS_URL);
+  syncEnabled = true;
+  hideBanner();
+  showToast('✓ クラウド同期を設定しました');
+  setSyncStatus('syncing', '同期中…');
+  cloudLoad(); // すぐに読み込み試行
+}
+
+function skipGas() {
+  hideBanner();
+  setSyncStatus('', 'ローカルのみ');
+  showToast('ローカル保存モードで起動しました');
+}
+
+function hideBanner() {
+  const b = document.getElementById('gasBanner');
+  if (b) b.style.display = 'none';
+  adjustPagePadding();
+}
+
+function adjustPagePadding() {
+  const banner = document.getElementById('gasBanner');
+  const bannerH = (banner && banner.style.display !== 'none') ? banner.offsetHeight : 0;
+  document.getElementById('pageWrap').style.paddingTop =
+    `calc(var(--header-h) + env(safe-area-inset-top) + ${bannerH}px)`;
+  const co = document.getElementById('carryOverBanner');
+  if (co) co.style.top = `calc(var(--header-h) + env(safe-area-inset-top) + ${bannerH}px)`;
+}
+
+function setSyncStatus(type, label) {
+  const el = document.getElementById('syncStatus');
+  el.className = 'sync-status' + (type ? ' ' + type : '');
+  document.getElementById('syncLabel').textContent = label;
+}
+
+/* ═══════════════════════════════════════
+   クラウド同期（GAS）
+═══════════════════════════════════════ */
+async function cloudSave() {
+  if (!syncEnabled || !GAS_URL) return;
+  const data = collectData();
+  setSyncStatus('syncing', '同期中…');
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', data }),
+    });
+    setSyncStatus('ok', '同期済み ✓');
+    setTimeout(() => setSyncStatus('ok', 'クラウド同期有効'), 3000);
+  } catch(e) {
+    setSyncStatus('err', 'オフライン');
+  }
+}
+
+async function cloudLoad() {
+  if (!syncEnabled || !GAS_URL) return null;
+  setSyncStatus('syncing', '読み込み中…');
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const json = await res.json();
+    setSyncStatus('ok', '同期済み ✓');
+    setTimeout(() => setSyncStatus('ok', 'クラウド同期有効'), 3000);
+    return json?.data || json || null;
+  } catch(e) {
+    setSyncStatus('err', 'オフライン');
+    return null;
+  }
+}
+
+function collectData() {
+  return {
+    savedDate:  new Date().toISOString().split('T')[0],
+    reportDate: document.getElementById('reportDate').value,
+    recipient:  document.getElementById('recipient').value,
+    introText:  document.getElementById('introText').value,
+    tasks, taskIdCounter,
+  };
+}
+
+/* ═══════════════════════════════════════
+   localStorage（オフラインバックアップ）
+═══════════════════════════════════════ */
+function localSave() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectData()));
+  } catch(e) {}
+}
+
+function localLoad() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    d.isCarryOver = (d.savedDate !== new Date().toISOString().split('T')[0]);
+    return d;
+  } catch(e) { return null; }
+}
+
+/* ═══════════════════════════════════════
+   統合保存（ローカル即時 + クラウド非同期）
+═══════════════════════════════════════ */
+let saveTimer = null;
+function scheduleSave() {
+  localSave();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(cloudSave, 1200); // 1.2秒後にクラウド同期
+}
+
+function bindAutoSave() {
+  ['reportDate','recipient','introText'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input',  scheduleSave);
+    document.getElementById(id)?.addEventListener('change', scheduleSave);
+  });
+}
+
+/* ═══════════════════════════════════════
+   ページ切り替え（スマホ）
+═══════════════════════════════════════ */
+const PAGES = { settings:'pageSettings', tasks:'pageTasks', output:'pageOutput' };
+const NAVS  = { settings:'navSettings',  tasks:'navTasks',  output:'navOutput'  };
+
+function switchPage(name) {
+  if (window.innerWidth >= 768) return;
+  Object.values(PAGES).forEach(id => document.getElementById(id)?.classList.remove('active'));
+  document.getElementById(PAGES[name])?.classList.add('active');
+  Object.values(NAVS).forEach(id  => document.getElementById(id)?.classList.remove('active'));
+  document.getElementById(NAVS[name])?.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function generateAndSwitch() {
+  generateReport();
+  if (window.innerWidth < 768) switchPage('output');
+}
+
+/* ═══════════════════════════════════════
+   タスク管理
+═══════════════════════════════════════ */
+function addTask(data = null) {
+  const id = ++taskIdCounter;
+  const task = { id, title:data?.title??'', time:data?.time??'', detail:data?.detail??'', remaining:data?.remaining??'', subs:data?.subs??[] };
+  tasks.push(task);
+  renderTask(task);
+  updateCount();
+  scheduleSave();
+  if (!data) {
+    const el = document.getElementById(`task-${id}`);
+    openTask(el, true);
+    setTimeout(() => el?.querySelector('.task-title-input')?.focus(), 50);
+  }
+}
+
+function renderTask(task) {
+  const idx = tasks.indexOf(task) + 1;
+  const div = document.createElement('div');
+  div.className = `task-item${task.remaining ? ' has-remaining' : ''}`;
+  div.id = `task-${task.id}`;
+  div.innerHTML = buildTaskHTML(task, idx);
+  document.getElementById('tasksContainer').appendChild(div);
+  bindTaskEvents(div, task);
+}
+
+function buildTaskHTML(task, idx) {
+  const subsHTML = task.subs.map((s, i) => buildSubHTML(s, i, task.id)).join('');
+  return `
+    <div class="task-bar" onclick="toggleTask(this.closest('.task-item'))">
+      <span class="task-num">(${idx})</span>
+      <span class="task-title-preview">${escHtml(task.title)||'（タイトル未入力）'}</span>
+      <div class="task-bar-actions" onclick="event.stopPropagation()">
+        <button class="btn-icon" onclick="moveTask(${task.id},-1)">↑</button>
+        <button class="btn-icon" onclick="moveTask(${task.id}, 1)">↓</button>
+        <button class="btn-icon del" onclick="deleteTask(${task.id})">✕</button>
+      </div>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="task-fields">
+      <div class="field-group">
+        <label class="field-label">タスク名</label>
+        <input type="text" class="field-input task-title-input" placeholder="作業名・対応内容"
+          value="${escHtml(task.title)}" onchange="updateTaskField(${task.id},'title',this.value)">
+      </div>
+      <div class="row2">
+        <div class="field-group">
+          <label class="field-label">開始</label>
+          <input type="text" class="field-input" inputmode="numeric" placeholder="9:00"
+            value="${escHtml(task.time?task.time.split('～')[0]:'')}" id="ts-${task.id}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">終了</label>
+          <input type="text" class="field-input" inputmode="numeric" placeholder="10:00"
+            value="${escHtml(task.time?task.time.split('～')[1]||'':'')}" id="te-${task.id}">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">詳細・補足</label>
+        <textarea class="field-input" placeholder="実施内容・結果など"
+          onchange="updateTaskField(${task.id},'detail',this.value)">${escHtml(task.detail)}</textarea>
+      </div>
+      <div class="field-group remaining-field">
+        <label class="field-label">⚠ 残作業</label>
+        <textarea class="field-input" placeholder="次回対応が必要な作業内容"
+          onchange="updateTaskField(${task.id},'remaining',this.value)">${escHtml(task.remaining)}</textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">サブタスク</label>
+        <div class="subtasks-box" id="subs-${task.id}">${subsHTML}</div>
+        <button class="btn-sm" style="margin-top:8px" onclick="addSub(${task.id})">＋ サブタスク追加</button>
+      </div>
+    </div>`;
+}
+
+function buildSubHTML(text, idx, taskId) {
+  const ti = getTaskIdx(taskId);
+  return `
+    <div class="subtask-row" data-sub-idx="${idx}">
+      <span class="subtask-num">(${ti+1}-${idx+1})</span>
+      <textarea class="subtask-input" rows="2" placeholder="サブ作業内容"
+        onchange="updateSub(${taskId},${idx},this.value)">${escHtml(text)}</textarea>
+      <div><button class="btn-icon del" onclick="deleteSub(${taskId},${idx})" style="margin-top:6px">✕</button></div>
+    </div>`;
+}
+
+function bindTaskEvents(div, task) {
+  div.querySelector('.task-title-input')?.addEventListener('input', e => {
+    div.querySelector('.task-title-preview').textContent = e.target.value || '（タイトル未入力）';
+    task.title = e.target.value; scheduleSave();
+  });
+  const bindTime = () => {
+    const s = div.querySelector(`#ts-${task.id}`)?.value?.trim()||'';
+    const e = div.querySelector(`#te-${task.id}`)?.value?.trim()||'';
+    task.time = s&&e?`${s}～${e}`:s||e; scheduleSave();
+  };
+  div.querySelector(`#ts-${task.id}`)?.addEventListener('change', bindTime);
+  div.querySelector(`#te-${task.id}`)?.addEventListener('change', bindTime);
+  div.querySelectorAll('textarea').forEach(ta => {
+    if (ta.placeholder.includes('残作業')) {
+      ta.addEventListener('input', () => div.classList.toggle('has-remaining', ta.value.trim()!==''));
+    }
+  });
+}
+
+function updateTaskField(id, field, value) {
+  const t = getTaskById(id); if(!t) return;
+  t[field] = value;
+  if (field==='remaining') document.getElementById(`task-${id}`)?.classList.toggle('has-remaining', value.trim()!=='');
+  scheduleSave();
+}
+function updateSub(taskId, idx, value) { const t=getTaskById(taskId); if(t){t.subs[idx]=value;scheduleSave();} }
+function addSub(taskId) {
+  const t=getTaskById(taskId); if(!t) return;
+  t.subs.push('');
+  const box=document.getElementById(`subs-${taskId}`), idx=t.subs.length-1;
+  const tmp=document.createElement('div'); tmp.innerHTML=buildSubHTML('',idx,taskId);
+  box.appendChild(tmp.firstElementChild); scheduleSave();
+}
+function deleteSub(taskId, idx) {
+  const t=getTaskById(taskId); if(!t) return;
+  t.subs.splice(idx,1);
+  document.getElementById(`subs-${taskId}`)?.children[idx]?.remove();
+  reIndexSubs(taskId); scheduleSave();
+}
+function reIndexSubs(taskId) {
+  const box=document.getElementById(`subs-${taskId}`); if(!box) return;
+  const ti=getTaskIdx(taskId);
+  Array.from(box.children).forEach((row,i)=>{ row.querySelector('.subtask-num').textContent=`(${ti+1}-${i+1})`; });
+}
+function toggleTask(el) { el.classList.toggle('open'); }
+function openTask(el, force) { if(force) el?.classList.add('open'); }
+function moveTask(id, dir) {
+  const idx=tasks.findIndex(t=>t.id===id), ni=idx+dir;
+  if(ni<0||ni>=tasks.length) return;
+  [tasks[idx],tasks[ni]]=[tasks[ni],tasks[idx]];
+  reRenderAll(); scheduleSave();
+}
+function deleteTask(id) {
+  tasks=tasks.filter(t=>t.id!==id);
+  document.getElementById(`task-${id}`)?.remove();
+  updateCount(); reNumberAll(); scheduleSave();
+}
+function reRenderAll() {
+  const states={};
+  tasks.forEach(t=>{states[t.id]=document.getElementById(`task-${t.id}`)?.classList.contains('open');});
+  document.getElementById('tasksContainer').innerHTML='';
+  tasks.forEach((task,i)=>{
+    const div=document.createElement('div');
+    div.className=`task-item${task.remaining?' has-remaining':''}${states[task.id]?' open':''}`;
+    div.id=`task-${task.id}`; div.innerHTML=buildTaskHTML(task,i+1);
+    document.getElementById('tasksContainer').appendChild(div);
+    bindTaskEvents(div,task);
+  });
+  updateCount();
+}
+function reNumberAll() {
+  document.querySelectorAll('.task-item').forEach((el,i)=>{ el.querySelector('.task-num').textContent=`(${i+1})`; });
+}
+function updateCount() { document.getElementById('taskCount').textContent=tasks.length; }
+function getTaskById(id) { return tasks.find(t=>t.id===id); }
+function getTaskIdx(id)  { return tasks.findIndex(t=>t.id===id); }
+
+/* ═══════════════════════════════════════
+   報告文生成
+═══════════════════════════════════════ */
+function generateReport() {
+  const dateStr=formatDate(document.getElementById('reportDate').value);
+  const recipient=document.getElementById('recipient').value.trim();
+  const intro=document.getElementById('introText').value.trim();
+  let lines=[], hasRemaining=false;
+  if(recipient) lines.push(recipient);
+  lines.push(`【${dateStr} 作業報告】`,'');
+  if(intro) lines.push(intro,'');
+  tasks.forEach((task,i)=>{
+    const num=i+1;
+    let line=`(${num}) ${task.title}`;
+    if(task.time) line+=`（${task.time}）`;
+    if(task.detail) line+=task.detail;
+    lines.push(line);
+    task.subs.forEach((sub,j)=>{
+      if(!sub.trim()) return;
+      sub.split('\n').forEach((sl,k)=>{
+        if(k===0) lines.push(`  (${num}-${j+1}) ${sl.trim()}`);
+        else if(sl.trim()) lines.push(`    ${sl.trim()}`);
+      });
+    });
+    if(task.remaining?.trim()) { hasRemaining=true; lines.push(`  ▶ 残作業：${task.remaining.trim()}`); }
+  });
+  lines.push('','以上、ご確認よろしくお願いいたします。');
+  const area=document.getElementById('outputArea');
+  area.textContent=lines.join('\n'); area.classList.add('has-content');
+  document.getElementById('remainingIndicator').classList.toggle('visible', hasRemaining);
+  document.getElementById('copyBtn').disabled=false;
+  showToast('✦ 報告文を生成しました');
+}
+
+function formatDate(iso) {
+  if(!iso) return '本日';
+  return new Date(iso+'T00:00:00').toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+}
+
+/* ═══════════════════════════════════════
+   コピー・クリア
+═══════════════════════════════════════ */
+function copyReport() {
+  const text=document.getElementById('outputArea').textContent;
+  if(!text||text.includes('タブで')) return;
+  if(navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(onCopied).catch(()=>fallbackCopy(text));
+  else fallbackCopy(text);
+}
+function fallbackCopy(text) {
+  const ta=document.createElement('textarea');
+  ta.value=text; ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); onCopied(); } catch(e) { showToast('コピーに失敗しました'); }
+  document.body.removeChild(ta);
+}
+function onCopied() {
+  const btn=document.getElementById('copyBtn');
+  btn.textContent='✓ コピー完了'; showToast('📋 クリップボードにコピーしました');
+  setTimeout(()=>{btn.textContent='📋 コピー';},2200);
+}
+function clearOutput() {
+  const area=document.getElementById('outputArea');
+  area.innerHTML='<span class="output-placeholder">「タスク」タブで「報告文を生成」を押すとここに表示されます。</span>';
+  area.classList.remove('has-content');
+  document.getElementById('remainingIndicator').classList.remove('visible');
+  document.getElementById('copyBtn').disabled=true;
+}
+
+/* ═══════════════════════════════════════
+   Toast / Utils
+═══════════════════════════════════════ */
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ═══════════════════════════════════════
+   リセット
+═══════════════════════════════════════ */
+function resetAll() {
+  if(!confirm('本日の入力内容をすべてリセットします。よろしいですか？')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  tasks=[]; taskIdCounter=0;
+  document.getElementById('tasksContainer').innerHTML='';
+  document.getElementById('recipient').value='';
+  document.getElementById('introText').value='本日の作業報告です。残作業があるので、ご確認ください。';
+  document.getElementById('reportDate').value=new Date().toISOString().split('T')[0];
+  updateCount(); clearOutput();
+  if(syncEnabled) cloudSave();
+  showToast('🗑 リセットしました');
+}
+
+/* ═══════════════════════════════════════
+   データ適用（復元・引き継ぎ共通）
+═══════════════════════════════════════ */
+function applyData(saved, iso) {
+  const today = iso || new Date().toISOString().split('T')[0];
+  const isCarryOver = saved.savedDate !== today;
+
+  document.getElementById('reportDate').value = isCarryOver ? today : (saved.reportDate || today);
+  document.getElementById('recipient').value  = saved.recipient || '';
+  document.getElementById('introText').value  = saved.introText || '本日の作業報告です。残作業があるので、ご確認ください。';
+  taskIdCounter = saved.taskIdCounter || 0;
+
+  if (isCarryOver) {
+    // 翌日：残作業タスクのみ引き継ぎ
+    const carry = (saved.tasks || []).filter(t => t.remaining?.trim());
+    carry.forEach(t => { tasks.push(t); renderTask(t); });
+    updateCount();
+    if (carry.length > 0) {
+      setTimeout(() => showCarryOverBanner(saved.savedDate, carry.length), 400);
+    } else {
+      setTimeout(() => showToast('📅 日付を更新しました（引き継ぎ残作業なし）'), 400);
+    }
+    scheduleSave(); // 新しい日付で保存
+  } else {
+    // 当日：全データ復元
+    (saved.tasks || []).forEach(t => { tasks.push(t); renderTask(t); });
+    updateCount();
+    setTimeout(() => showToast('💾 作業内容を復元しました'), 400);
+  }
+}
+
+function showCarryOverBanner(prevDate, count) {
+  const fmtDate = new Date(prevDate+'T00:00:00').toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+  const b = document.createElement('div');
+  b.id = 'carryOverBanner';
+  b.innerHTML = `<span style="font-size:20px;flex-shrink:0">📋</span>
+    <span><strong>${fmtDate}の残作業 ${count}件</strong>を引き継ぎました</span>
+    <button class="banner-close" onclick="this.parentElement.remove()">閉じる</button>`;
+  document.body.appendChild(b);
+  adjustPagePadding();
+}
+
+/* ═══════════════════════════════════════
+   初期化
+═══════════════════════════════════════ */
+async function init() {
+  const today = new Date();
+  const iso   = today.toISOString().split('T')[0];
+
+  document.getElementById('todayDate').textContent =
+    today.toLocaleDateString('ja-JP', { month:'2-digit', day:'2-digit', weekday:'short' });
+
+  initGasUrl();
+  bindAutoSave();
+
+  // ① クラウドから読み込み（同期有効な場合）
+  if (syncEnabled) {
+    const cloudData = await cloudLoad();
+    if (cloudData) {
+      applyData(cloudData, iso);
+      localSave(); // クラウドデータをローカルにも反映
+      return;
+    }
+  }
+
+  // ② ローカルにフォールバック
+  const localData = localLoad();
+  if (localData) {
+    applyData(localData, iso);
+    return;
+  }
+
+  // ③ 初回起動
+  document.getElementById('reportDate').value = iso;
+  document.getElementById('introText').value  = '本日の作業報告です。残作業があるので、ご確認ください。';
+}
+
+init();
+</script>
+</body>
+</html>
